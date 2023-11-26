@@ -1,93 +1,72 @@
-import Button from './Button';
-import ImageGallery from './ImageGallery';
-import SearchBar from './SearchBar/SearchBar';
+import { useEffect, useState } from 'react';
 import { ColorRing } from 'react-loader-spinner';
 import toast, { Toaster } from 'react-hot-toast';
 
-import React, { Component } from 'react';
+import SearchBar from './SearchBar';
+import ImageGallery from './ImageGallery';
+import Button from './Button';
+
 import { getImages } from './api';
 
-export class App extends Component {
-  state = {
-    target: '',
-    data: [],
-    totalPages: 0,
-    page: 1,
-    isLoading: false,
+export const App = () => {
+  const [target, setTarget] = useState('');
+  const [data, setData] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const onSubmitData = newTarget => {
+    setPage(1);
+    setData([]);
+    setTarget(newTarget);
   };
 
-  onSubmitData = async newTarget => {
-    this.setState({
-      target: newTarget,
-      page: 1,
-      data: [],
-    });
+  const onLoadMore = () => {
+    setPage(prev => prev + 1);
   };
-  onLoadMore = () => {
-    this.setState(prevState => {
-      return {
-        page: prevState.page + 1,
-      };
-    });
-  };
-  async componentDidUpdate(prevProps, prevState) {
-    if (
-      this.state.page !== prevState.page ||
-      this.state.target !== prevState.target
-    ) {
+
+  useEffect(() => {
+    if (target === '') return;
+
+    const getData = async () => {
       try {
-        this.setState({
-          isLoading: true,
-        });
-        const res = await getImages(this.state.target, this.state.page);
-        const { hits, totalHits } = res;
-        this.setState(prevState => {
-          return {
-            data: [...prevState.data, ...hits],
-            totalPages: Math.ceil(totalHits / 12),
-          };
-        });
+        setIsLoading(true);
+        const data = await getImages(target, page);
+        const { hits, totalHits } = data;
+        setData(prev => [...prev, ...hits]);
+        setTotalPages(Math.ceil(totalHits / 12));
       } catch {
         toast.error('Error! Try again!');
       } finally {
-        this.setState({
-          isLoading: false,
-        });
+        setIsLoading(false);
       }
-    }
-  }
-  toggleLoader = () => {
-    this.setState(prevState => {
-      return {
-        isLoading: !prevState.isLoading,
-      };
-    });
-  };
-  render() {
-    const { target, data, totalPages, page, isLoading } = this.state;
-    return (
-      <>
-        <SearchBar onSubmitData={this.onSubmitData} />
-        {isLoading ? (
-          <ColorRing
-            visible={true}
-            height="80"
-            width="80"
-            ariaLabel="blocks-loading"
-            wrapperStyle={{
-              display: 'block',
-              margin: '0 auto',
-            }}
-            colors={['#e15b64', '#f47e60', '#f8b26a', '#abbd81', '#849b87']}
-          />
-        ) : (
-          <ImageGallery target={target} data={data} />
-        )}
-        {totalPages > 1 && page < totalPages && (
-          <Button onLoadMore={this.onLoadMore} />
-        )}
-        <Toaster position="top-right" />;
-      </>
-    );
-  }
-}
+    };
+
+    getData();
+  }, [page, target]);
+
+  return (
+    <>
+      <SearchBar onSubmitData={onSubmitData} />
+      {isLoading ? (
+        <ColorRing
+          visible={true}
+          height="80"
+          width="80"
+          ariaLabel="blocks-loading"
+          wrapperStyle={{
+            display: 'block',
+            margin: '0 auto',
+          }}
+          colors={['#e15b64', '#f47e60', '#f8b26a', '#abbd81', '#849b87']}
+        />
+      ) : (
+        <ImageGallery target={target} data={data} />
+      )}
+      {totalPages > 1 && page < totalPages && (
+        <Button onLoadMore={onLoadMore} />
+      )}
+      <Toaster position="top-right" />
+    </>
+  );
+};
