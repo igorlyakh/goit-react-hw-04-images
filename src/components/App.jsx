@@ -48,7 +48,7 @@ export const App = () => {
   return (
     <>
       <SearchBar onSubmitData={onSubmitData} />
-      {isLoading ? (
+      {isLoading && (
         <ColorRing
           visible={true}
           height="80"
@@ -60,13 +60,12 @@ export const App = () => {
           }}
           colors={['#e15b64', '#f47e60', '#f8b26a', '#abbd81', '#849b87']}
         />
-      ) : (
-        <ImageGallery target={target} data={data} />
       )}
+      <ImageGallery data={data} />
       {totalPages > 1 && page < totalPages && (
         <Button onLoadMore={onLoadMore} />
       )}
-      <Toaster position="top-right" />
+      <Toaster position="top-center" />
     </>
   );
 };
